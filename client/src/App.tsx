@@ -28,12 +28,14 @@ function App() {
     setConversations((c) => ({ ...c, [message]: "" }));
     // console.log("calling api");
 
-    setLoadingMsg(
-      "Designing your next unforgettable trip…",
-    );
+    setLoadingMsg("Designing your next unforgettable trip…");
 
     try {
-      const response = await fetch("http://localhost:3001/api/travel", {
+      const BASE_URL = import.meta.env.PROD
+        ? "https://travel-agent-server-nveraw.vercel.app"
+        : "http://localhost:3001";
+
+      const response = await fetch(`${BASE_URL}/api/travel`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message, sessionId: sessionId.current }),
@@ -47,7 +49,7 @@ function App() {
 
       while (true) {
         if (abortControllerRef.current?.signal.aborted) {
-          // console.log("Loop stopped");
+          // console.log("Aborted");
           break;
         }
 
@@ -68,16 +70,24 @@ function App() {
             const { type, data } = JSON.parse(line.slice(6));
             // console.log("type", type, "data", data);
 
-            if (type === "status") {
-              setLoadingMsg(data);
-            } else if (type === "chunk") {
-              chat += data;
-              setConversations((c) => ({ ...c, [message]: chat }));
-            } else {
-              setLoadingMsg("");
-              if (type === "error") {
+            switch (type) {
+              case "status":
+                setLoadingMsg(data);
+                break;
+              case "chunk":
+                chat += data;
+                setConversations((c) => ({ ...c, [message]: chat }));
+                break;
+              case "clarify":
+                setConversations((c) => ({ ...c, [message]: data }));
+                break;
+              case "error":
                 console.error("api error: ", data);
-              }
+                break;
+
+              default:
+                setLoadingMsg("");
+                break;
             }
           } catch {
             // malformed SSE line, skip

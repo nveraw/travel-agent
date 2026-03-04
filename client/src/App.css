@@ -6,3 +6,68 @@
   width: 100vw;
   height: 100vh;
 }
+
+.markdown {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  ol,
+  ul {
+    list-style: revert;
+    padding-left: 16px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-size: revert;
+    font-weight: revert;
+  }
+
+  code,
+  pre {
+    background-color: #ececec;
+    border-radius: 0.25rem;
+    padding: 0.15rem 0.3rem;
+    font-size: 0.85rem;
+  }
+
+  pre:has(> code) {
+    padding: 0.5rem 1rem;
+  }
+
+  pre code {
+    padding: 0;
+  }
+
+  blockquote {
+    padding-left: calc(var(--spacing) * 6);
+    border-left: 3px solid #cccccc;
+    margin-bottom: calc(var(--spacing) * 2);
+
+    p:has(+ *) {
+      margin-top: calc(var(--spacing) * 2);
+    }
+
+    blockquote {
+      padding-bottom: calc(var(--spacing) * 2);
+    }
+  }
+
+  p:has(+ *) {
+    margin-bottom: calc(var(--spacing) * 2);
+  }
+
+  a {
+    text-decoration: underline var(--color-blue-400);
+    text-underline-offset: 4px;
+  }
+
+  a:hover {
+    color: var(--color-blue-400);
+  }
+}

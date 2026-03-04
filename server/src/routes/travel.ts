@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
-import { generateFakeData } from "../chains/fakeData";
-import { streamItinerary } from "../chains/itinerary";
-import { resolveQuery } from "../chains/resolver";
+import { generateFakeData } from "../chains/fakeData.js";
+import { streamItinerary } from "../chains/itinerary.js";
+import { resolveQuery } from "../chains/resolver.js";
 
 const router = Router();
 

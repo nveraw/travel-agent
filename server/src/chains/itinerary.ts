@@ -46,7 +46,7 @@ COST ESTIMATION:
 - Use the pricing logic from WORLD DATA.
 - Show two totals if both budget and luxury were suggested.
 
-Make the response feel natural, human, and exciting — not robotic.
+Make the response feel natural, human, friendly and exciting — not robotic, use emoji to look friendly.
 `
 
 export async function streamItinerary(

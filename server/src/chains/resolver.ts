@@ -56,7 +56,7 @@ RULES:
 - Use your knowledge of seasons, climate, festivals, and travel trends to pick the best matches
 - If the user mentions a specific country or city, return only that
 - If the user is vague (e.g. "somewhere warm"), pick the top 3-4 best matches
-- If the query is too vague to even pick candidates, set needsMoreInfo to true and ask a clarifying question
+- If the query is too vague to even pick candidates, set needsMoreInfo to true and briefly responsed to user in a friendly way and ask a clarifying question
 - Consider conversation history — if user said "winter trip" before and now says "what about asia", resolve asian winter destinations
 - Always prefer quality over quantity — 2 great picks beat 4 mediocre ones
 `),

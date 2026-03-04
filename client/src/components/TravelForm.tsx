@@ -26,7 +26,7 @@ function TravelForm({ isLoading, onSend, onStop, className }: TravelFormProps) {
 
   return (
     <form
-      className={`flex ${className}`}
+      className={`flex w-full max-w-159.5 mx-auto ${className}`}
       onSubmit={(e) => {
         e.preventDefault();
         onSend(inputMsg.trim());
@@ -49,7 +49,7 @@ function TravelForm({ isLoading, onSend, onStop, className }: TravelFormProps) {
       />
       {isLoading ? (
         <button
-          className="h-10 w-10 text-2xl p-0 flex items-center justify-center bg-gray-50"
+          className="h-10 w-10 mt-auto text-2xl p-0 flex items-center justify-center bg-gray-50"
           type="button"
           onClick={handleStop}
         >
@@ -57,7 +57,7 @@ function TravelForm({ isLoading, onSend, onStop, className }: TravelFormProps) {
         </button>
       ) : (
         <button
-          className="h-10 w-10 text-2xl p-0 flex items-center justify-center bg-gray-50"
+          className="h-10 w-10 mt-auto text-2xl p-0 flex items-center justify-center bg-gray-50"
           type="submit"
         >
           ➤

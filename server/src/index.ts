@@ -1,24 +1,36 @@
 import express from "express";
 import cors from "cors";
-import path from "path";
-import travelRouter from "./routes/travel";
+import travelRouter from "./routes/travel.js";
 
 const app = express();
-const PORT = 3001;
 
-app.use(cors({ origin: "http://localhost:5173" }));
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://travel-agent-nveraw.vercel.app",
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  }
+}));
+
 app.use(express.json());
-
-// All travel AI routes — replace with real API calls in the future
 app.use("/api", travelRouter);
 
-app.listen(PORT, () => {
-  console.log(`🚀 Travel AI server running on http://localhost:${PORT}`);
+app.get("/", (req, res) => {
+  res.json({ status: "ok" });
 });
 
-app.use(express.static(path.join(__dirname, "../../client/dist")));
+if (process.env.NODE_ENV !== "production") {
+  const PORT = process.env.PORT || 3001;
+  app.listen(PORT, () => {
+    console.log(`🚀 server running on http://localhost:${PORT}`);
+  });
+}
 
-// catch-all for client-side routing
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../../client/dist/index.html"));
-});
+export default app;
