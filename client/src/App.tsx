@@ -1,45 +1,112 @@
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import "./App.css";
-import { useStreamingTravel } from "./hooks/useStreamingTravel";
+import TravelForm from "./components/TravelForm";
+import TravelItinerary from "./components/TravelItinerary";
 
 function App() {
-  const [message, setMessage] = useState("");
-  const { state, submit, abort } = useStreamingTravel();
+  const [conversations, setConversations] = useState<Record<string, string>>(
+    {},
+  );
+  const [loadingMsg, setLoadingMsg] = useState("");
 
-  const handleSubmit = () => {
-    console.log('handleSubmit', message)
-    if (message.trim()) submit(message.trim());
+  const sessionId = useRef(crypto.randomUUID());
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const handleStop = () => {
+    abortControllerRef.current?.abort();
+    // console.log("stop");
+    setLoadingMsg("");
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && e.ctrlKey) {
-      e.preventDefault();
-      if (!state.isLoading) handleSubmit();
+  const streamTravel = useCallback(async (message: string) => {
+    abortControllerRef.current = new AbortController();
+
+    // console.log("streamTravel", message);
+
+    if (!message) return;
+    let chat = "";
+    setConversations((c) => ({ ...c, [message]: "" }));
+    // console.log("calling api");
+
+    setLoadingMsg(
+      "Designing your next unforgettable trip…",
+    );
+
+    try {
+      const response = await fetch("http://localhost:3001/api/travel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, sessionId: sessionId.current }),
+        signal: abortControllerRef.current.signal,
+      });
+      // console.log("response", response);
+      if (!response.body) throw new Error("No response body");
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        if (abortControllerRef.current?.signal.aborted) {
+          // console.log("Loop stopped");
+          break;
+        }
+
+        // value: array of numbers
+        const { done, value } = await reader.read();
+        if (done) break;
+        // console.log("done", done);
+
+        // decode: data:{} \n data:{}
+        const buffer = decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        // console.log("lines", lines);
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          try {
+            // remove data:, parse {}
+            const { type, data } = JSON.parse(line.slice(6));
+            // console.log("type", type, "data", data);
+
+            if (type === "status") {
+              setLoadingMsg(data);
+            } else if (type === "chunk") {
+              chat += data;
+              setConversations((c) => ({ ...c, [message]: chat }));
+            } else {
+              setLoadingMsg("");
+              if (type === "error") {
+                console.error("api error: ", data);
+              }
+            }
+          } catch {
+            // malformed SSE line, skip
+          }
+        }
+      }
+    } catch (err) {
+      if ((err as Error).name === "AbortError") {
+        // console.log("Cancelled");
+        setLoadingMsg("");
+      } else {
+        // console.log(err instanceof Error ? err.message : "Unknown error");
+        setLoadingMsg("");
+      }
+    } finally {
+      setLoadingMsg("");
     }
-  };
+  }, []);
 
   return (
-    <>
-      <form onSubmit={handleSubmit}>
-        <textarea
-          className="m-2 p-2 rounded-md outline-2 outline-gray-200 bg-grey-50"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Where do you want to travel? (e.g. 'I want to go to Japan in spring' or 'suggest a winter destination')"
-          rows={3}
-          onKeyDown={handleKeyDown}
-        />
-        <button
-          type="button"
-          className=""
-          onClick={() => (state.isLoading ? abort() : handleSubmit())}
-        >
-          {state.isLoading ? "Stop" : "Send"}
-        </button>
-      </form>
-      {state.itinerary}
-      {state.isLoading && <div className="loading" />}
-    </>
+    <main className="flex flex-col w-full h-full">
+      <TravelItinerary conversations={conversations} loadingMsg={loadingMsg} />
+      <TravelForm
+        className={Object.keys(conversations).length ? "" : "flex-1"}
+        isLoading={loadingMsg.length > 0}
+        onSend={streamTravel}
+        onStop={handleStop}
+      />
+    </main>
   );
 }
 

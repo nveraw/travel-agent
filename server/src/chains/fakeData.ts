@@ -1,47 +1,162 @@
 import "dotenv/config";
 import { ChatMistralAI } from "@langchain/mistralai";
-import { PromptTemplate } from "@langchain/core/prompts";
-import { StringOutputParser } from "@langchain/core/output_parsers";
+import {
+  AIMessage,
+  createAgent,
+  HumanMessage,
+  SystemMessage,
+  toolStrategy,
+} from "langchain";
+import * as z from "zod";
+
+const sessionHistories = new Map<
+  string,
+  (HumanMessage | AIMessage | SystemMessage)[]
+>();
 
 const model = new ChatMistralAI({
   apiKey: process.env.MISTRAL_API_KEY!,
-  model: "mistral-large-latest", // or "mistral-small-latest", "open-mistral-7b"
+  model: "open-mistral-7b",
   temperature: 0.9,
 });
 
-const fakeDataPrompt = PromptTemplate.fromTemplate(`
-You are a world knowledge database. Generate realistic travel data for the following request.
-User travel query: {userQuery}
+const Month = z.enum([
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+]);
+const locationSchema = z.object({
+  name: z.string().describe("Official place name"),
+  latitude: z.number(),
+  longitude: z.number(),
+  city: z.string(),
+  country: z.string(),
+});
+const fakeDataSchema = z.object({
+  destination: z
+    .string()
+    .describe(
+      "resolved destination name (infer if vague, pick a great one if none given)",
+    ),
+  weatherByMonth: z
+    .record(
+      Month,
+      z.object({
+        condition: z.enum(["sunny", "rainy", "snowy", "cloudy", "stormy"]),
+        tempCelsius: z.number(),
+        humidity: z.enum(["low", "medium", "high"]),
+      }),
+    )
+    .describe(""),
+  popularSpots: z.array(
+    z.object({
+      name: z.string(),
+      location: locationSchema,
+      type: z.enum(["beach", "mountain", "temple", "museum", "city", "desert"]),
+      bestSeason: z.enum(["spring", "summer", "autumn", "winter", "all-year"]),
+    }),
+  ).max(3),
+  popularFoods: z.array(
+    z.object({
+      name: z.string().describe("Famous local dish name"),
+      description: z.string().describe("Short description of the dish"),
+      bestPlaceToTry: z.object({
+        name: z.string().describe("Restaurant or area name"),
+        location: locationSchema,
+      }),
+      priceRange: z.enum(["$", "$$", "$$$", "$$$$"]),
+    }),
+  ).max(3),
+  recommendedHotels: z.array(
+    z.object({
+      name: z.string(),
+      starRating: z.number().min(1).max(5),
+      location: locationSchema,
+      pricePerNightUSD: z.number(),
+      amenities: z.array(
+        z.enum([
+          "wifi",
+          "pool",
+          "spa",
+          "gym",
+          "restaurant",
+          "bar",
+          "parking",
+          "airport shuttle",
+        ]),
+      ),
+    }),
+  ).max(2),
+  ongoingFestivals: z.array(
+    z.object({
+      name: z.string(),
+      location: locationSchema,
+      month: Month,
+      durationDays: z.number(),
+      description: z.string(),
+      type: z.enum([
+        "cultural",
+        "music",
+        "religious",
+        "food",
+        "art",
+        "national",
+      ]),
+    }),
+  ).max(3),
+  travelTips: z.array(z.string()).max(2),
+});
 
-Return a JSON object (no markdown, raw JSON only) with this exact structure:
-{{
-  "destination": "resolved destination name (infer if vague, pick a great one if none given)",
-  "suggestedMonths": ["month1", "month2"],
-  "weatherByMonth": {{
-    "January": {{ "condition": "sunny/rainy/snowy/etc", "tempCelsius": 25, "humidity": "low/medium/high" }},
-    "February": {{ ... }},
-    ... all 12 months
-  }},
-  "popularSpots": [
-    {{ "name": "spot name", "type": "beach/mountain/temple/museum/etc", "bestSeason": "summer/winter/all-year" }},
-    {{ "name": "...", "type": "...", "bestSeason": "..." }},
-    {{ "name": "...", "type": "...", "bestSeason": "..." }},
-    {{ "name": "...", "type": "...", "bestSeason": "..." }},
-    {{ "name": "...", "type": "...", "bestSeason": "..." }}
-  ],
-  "ongoingFestivals": [
-    {{ "name": "festival name", "month": "December", "duration": "3 days", "description": "brief description" }},
-    {{ "name": "...", "month": "...", "duration": "...", "description": "..." }},
-    {{ "name": "...", "month": "...", "duration": "...", "description": "..." }}
-  ],
-  "travelTips": ["tip1", "tip2", "tip3"]
-}}
+const agent = createAgent({
+  model,
+  responseFormat: toolStrategy(fakeDataSchema),
+});
 
-Be creative and realistic. Generate data that makes sense for the actual destination.
-`);
+export const generateFakeData = async (
+  sessionId: string,
+  userQuery: string,
+  resolved: string,
+) => {
+  console.log("generateFakeData...");
+  if (!sessionHistories.has(sessionId)) {
+    console.log(sessionId, sessionHistories);
+    if (sessionHistories.size >= 2) {
+      const oldestKey = sessionHistories.keys().next().value;
+      if (oldestKey) sessionHistories.delete(oldestKey);
+    }
+    sessionHistories.set(sessionId, [
+      new SystemMessage(`
+You are a world travel knowledge database.
 
-export async function generateFakeData(userQuery: string): Promise<string> {
-  const chain = fakeDataPrompt.pipe(model).pipe(new StringOutputParser());
-  const result = await chain.invoke({ userQuery });
-  return result;
-}
+Generate realistic, geographically accurate travel data.
+Food must match the destination cuisine.
+Hotels should reflect real-world pricing for that country.
+Weather must align with climate zones based on the bestMonth in given context.
+Festivals should be culturally appropriate.
+bestSeason for the Popular spots should also based on the bestMonth in given context.
+
+context (infer the location and time):
+${resolved}
+
+Be creative but realistic.
+`),
+    ]);
+  }
+
+  const messages = sessionHistories.get(sessionId)!;
+  messages.push(new HumanMessage(userQuery));
+
+  const result = await agent.invoke({
+    messages,
+  });
+  return result.structuredResponse;
+};

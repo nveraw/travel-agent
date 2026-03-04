@@ -1,67 +1,92 @@
-import "dotenv/config";
 import { ChatMistralAI } from "@langchain/mistralai";
-import { PromptTemplate } from "@langchain/core/prompts";
-import { StringOutputParser } from "@langchain/core/output_parsers";
+import "dotenv/config";
+import { AIMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
+// import { generateFakeData } from "./fakeData";
 
 const model = new ChatMistralAI({
   apiKey: process.env.MISTRAL_API_KEY!,
-  model: "mistral-large-latest", // or "mistral-small-latest", "open-mistral-7b"
-  streaming: true,
-  // maxTokens: 2000,
+  model: "mistral-small-latest", // or "mistral-large-latest"
 });
 
-const itineraryPrompt = PromptTemplate.fromTemplate(`
-You are an expert travel consultant. Using the world data below, create a personalized travel recommendation and detailed itinerary.
+const sessionHistories = new Map<string, (HumanMessage | AIMessage | SystemMessage)[]>();
 
-USER REQUEST: {userQuery}
+const itineraryPrompt = `
+You are an expert travel consultant. Using ONLY the world data provided, create a personalized, detailed, conversational itinerary.
 
-WORLD DATA (use this to inform your suggestions):
-{worldData}
+STRICT RULES:
+- Do NOT invent restaurants, hotels, or attractions outside WORLD DATA.
+- All meals must come from the popularFoods list.
+- All attractions must come from popularSpots.
+- All festivals must come from ongoingFestivals.
+- Hotels must come from recommendedHotels.
+- Suggest the best date based data from worldData such as weather and festivals
 
-INSTRUCTIONS:
-- If user specified a destination, use it. Otherwise pick the best one from the data.
-- If user specified travel dates/months, use them. Otherwise recommend the best time based on weather + festivals.
-- Factor in weather suitability (e.g. don't suggest beaches in rainy season, suggest snow spots in winter).
-- Highlight any festivals happening during the suggested travel period.
-- Create a day-by-day itinerary using the popular spots.
-- Be conversational, enthusiastic, and specific.
+MEALS REQUIREMENT:
+- Each day must include Breakfast, Lunch, and Dinner.
+- Meals must use dishes or restaurants from popularFoods.
+- If a popular spot is large (e.g., theme park, beach district, cultural complex),
+  you may assume meals are consumed inside that location without adding extra travel.
+- Distribute foods logically across the trip (avoid repeating the same dish daily).
 
-FORMAT YOUR RESPONSE AS:
+ACTIVITY BALANCE:
+- If user specifies activity preference → prioritize it.
+- If no preference → create a balanced mix:
+  - cultural experiences
+  - leisure time
+  - food experiences
+  - light adventure (if destination allows)
 
-## ✈️ Your Travel Recommendation
+HOTEL LOGIC:
+- If user specifies budget → recommend the matching tier only.
+- If no budget specified → briefly suggest both budget and luxury options.
+- Assume hotel from WORLD DATA as accommodation base for itinerary.
 
-**Best time to visit:** [dates/months]
+COST ESTIMATION:
+- Provide a realistic total estimated cost at the end.
+- Use the pricing logic from WORLD DATA.
+- Show two totals if both budget and luxury were suggested.
 
-[Opening paragraph explaining why this destination + timing is perfect]
-
-## 🌤️ Weather During Your Visit
-[Weather details for the recommended period]
-
-## 🎉 Festivals & Events
-[Any festivals happening, or mention it's a quieter period if none]
-
-## 📍 Must-Visit Spots
-[List the top spots with brief descriptions]
-
-## 🗓️ Day-by-Day Itinerary
-[Detailed daily plan, 5-7 days]
-
-## 💡 Travel Tips
-[3-4 practical tips]
-`);
+Make the response feel natural, human, and exciting — not robotic.
+`
 
 export async function streamItinerary(
   userQuery: string,
   worldData: string,
-  onChunk: (chunk: string) => void,
+  sessionId: string,
+  onChunk: (chunk: any) => void,
   signal?: AbortSignal
 ): Promise<void> {
-  const chain = itineraryPrompt.pipe(model).pipe(new StringOutputParser());
+  if (!sessionHistories.has(sessionId)) {
+    console.log(sessionId, sessionHistories)
+    if (sessionHistories.size >= 2) {
+      const oldestKey = sessionHistories.keys().next().value;
+      if (oldestKey) sessionHistories.delete(oldestKey);
+    }
+    sessionHistories.set(sessionId, [
+      new SystemMessage(itineraryPrompt)
+    ]);
+  }
 
-  const stream = await chain.stream({ userQuery, worldData, signal });
+  const chatHistory = sessionHistories.get(sessionId)!;
+  chatHistory.push(new HumanMessage(`
+WORLD DATA (use this to inform your suggestions):
+${worldData}
 
+USER QUERY:
+${userQuery}
+`));
+  // console.log('chatHistory', chatHistory)
+
+  const stream = await model.stream(chatHistory, {signal});
+
+  let fullResponse = "";
   for await (const chunk of stream) {
     if (signal?.aborted) break;
-    onChunk(chunk);
+    if (chunk?.content) {
+      fullResponse += chunk.content;
+      onChunk(chunk.content);
+    }
   }
+  chatHistory.push(new AIMessage(fullResponse));
+  sessionHistories.set(sessionId, chatHistory);
 }
