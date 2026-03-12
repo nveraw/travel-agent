@@ -2,6 +2,8 @@
 
 An AI-powered travel itinerary generator built with React, Express, and Mistral AI. Uses a multi-step chain to resolve destinations, generate world data, and stream personalized itineraries.
 
+https://travel-agent-nveraw.vercel.app/
+
 ---
 
 ## Project Structure
