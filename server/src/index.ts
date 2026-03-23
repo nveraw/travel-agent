@@ -1,5 +1,6 @@
-import express from "express";
 import cors from "cors";
+import express from "express";
+import dataRouter from "./routes/data.js";
 import travelRouter from "./routes/travel.js";
 
 const app = express();
@@ -9,18 +10,21 @@ const allowedOrigins = [
   "https://travel-agent-nveraw.vercel.app",
 ];
 
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  }
-}));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+  }),
+);
 
 app.use(express.json());
 app.use("/api", travelRouter);
+app.use("/internal", dataRouter);
 
 app.get("/", (req, res) => {
   res.json({ status: "ok" });

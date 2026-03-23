@@ -37,8 +37,11 @@ function App() {
 
       const response = await fetch(`${BASE_URL}/api/travel`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, sessionId: sessionId.current }),
+        headers: {
+          "Content-Type": "application/json",
+          "x-session-id": sessionId.current,
+        },
+        body: JSON.stringify({ message }),
         signal: abortControllerRef.current.signal,
       });
       // console.log("response", response);

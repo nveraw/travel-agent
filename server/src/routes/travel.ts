@@ -1,12 +1,11 @@
-import { Router, Request, Response } from "express";
-import { generateFakeData } from "../chains/fakeData.js";
-import { streamItinerary } from "../chains/itinerary.js";
-import { resolveQuery } from "../chains/resolver.js";
+import { Request, Response, Router } from "express";
+import { planTravel } from "../chains/travel.chain";
 
 const router = Router();
 
 router.post("/travel", async (req: Request, res: Response) => {
-  const { message, sessionId } = req.body;
+  const { message } = req.body;
+  const threadId = (req.headers["x-session-id"] as string) || "default";
 
   if (!message) {
     res.status(400).json({ error: "Message is required" });
@@ -32,28 +31,11 @@ router.post("/travel", async (req: Request, res: Response) => {
   });
 
   try {
-    // --- CHAIN 1: Generate world data ---
-    sendEvent("status", "🧠 Resolving destination and timeline...");
-    const resolved = await resolveQuery(sessionId, message);
-    console.log("resolved", resolved);
-
-    if (resolved.needsMoreInfo) {
-      sendEvent("clarify", resolved.clarifyingQuestion ?? "Can you tell me more?");
-      res.end();
-      return;
-    }
-
-    sendEvent("status", "🌍 Gathering world data...");
-    const worldData = await generateFakeData(sessionId, message, JSON.stringify(resolved.candidates));
-    console.log("worldData", worldData);
-
     sendEvent("status", "📝 Building your itinerary...");
 
-    // --- CHAIN 2: Stream the itinerary ---
-    await streamItinerary(
+    await planTravel(
       message,
-      JSON.stringify(worldData),
-      sessionId,
+      threadId,
       (content) => {
         if (!controller.signal.aborted) sendEvent("chunk", content);
       },
