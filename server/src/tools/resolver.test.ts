@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { mockResolvedClarifyData, mockResolvedData } from "../mock";
-import { resolverResultSchema } from "../schema/resolver.schema";
-import { resolveQueryTool } from "./resolver.tool";
+import { mockResolvedClarifyData, mockResolvedData } from "../mock.js";
+import { resolverResultSchema } from "../schema/resolver.schema.js";
+import { resolveQueryTool } from "./resolver.tool.js";
 
 const mockModelInvoke = vi.fn().mockReturnValue({
   ...mockResolvedData,

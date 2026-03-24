@@ -1,5 +1,5 @@
-import { ResolverResult } from "./schema/resolver.schema";
-import { TravelDataResult } from "./schema/retrieval.schema";
+import { ResolverResult } from "./schema/resolver.schema.js";
+import { TravelDataResult } from "./schema/retrieval.schema.js";
 
 export const mockResolvedData: ResolverResult = {
   candidates: [

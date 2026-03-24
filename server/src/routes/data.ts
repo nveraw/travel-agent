@@ -1,6 +1,6 @@
 import { Request, Response, Router } from "express";
-import { supabase } from "../lib/supabase";
-import { TravelDataResult } from "../schema/retrieval.schema";
+import { supabase } from "../lib/supabase.js";
+import { TravelDataResult } from "../schema/retrieval.schema.js";
 
 const router = Router();
 

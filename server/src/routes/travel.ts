@@ -1,5 +1,5 @@
 import { Request, Response, Router } from "express";
-import { planTravel } from "../chains/travel.chain";
+import { planTravel } from "../chains/travel.chain.js";
 
 const router = Router();
 

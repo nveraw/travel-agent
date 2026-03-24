@@ -15,12 +15,12 @@ import {
   SystemMessage,
   ToolMessage,
 } from "langchain";
-import { getModel } from "../lib/model";
-import { loggingMiddleware } from "../middleware/log.middleware";
-import { resolverResultSchema } from "../schema/resolver.schema";
-import { travelDataSchema } from "../schema/retrieval.schema";
-import { resolveQueryTool } from "../tools/resolver.tool";
-import { generateDataTool, searchTravelTool } from "../tools/retrieval.tool";
+import { getModel } from "../lib/model.js";
+import { loggingMiddleware } from "../middleware/log.middleware.js";
+import { resolverResultSchema } from "../schema/resolver.schema.js";
+import { travelDataSchema } from "../schema/retrieval.schema.js";
+import { resolveQueryTool } from "../tools/resolver.tool.js";
+import { generateDataTool, searchTravelTool } from "../tools/retrieval.tool.js";
 
 const itineraryPrompt = `You are an expert travel consultant.
 Using ONLY the data provided, create a personalized, detailed, conversational itinerary.

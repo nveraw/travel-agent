@@ -1,9 +1,9 @@
 import { fakeModel } from "@langchain/core/testing";
 import { ToolMessage } from "langchain";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { mockResolvedData, mockTravelData } from "../mock";
-import { travelDataSchema } from "../schema/retrieval.schema";
-import { generateDataTool, searchTravelTool } from "./retrieval.tool";
+import { mockResolvedData, mockTravelData } from "../mock.js";
+import { travelDataSchema } from "../schema/retrieval.schema.js";
+import { generateDataTool, searchTravelTool } from "./retrieval.tool.js";
 
 vi.mock("node-fetch"); // Global fetch mock
 

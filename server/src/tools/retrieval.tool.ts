@@ -1,10 +1,13 @@
 import { HumanMessage, SystemMessage, tool } from "langchain";
-import { getModel } from "../lib/model";
+import { getModel } from "../lib/model.js";
 import {
   ResolverResult,
   resolverResultSchema,
-} from "../schema/resolver.schema";
-import { TravelDataResult, travelDataSchema } from "../schema/retrieval.schema";
+} from "../schema/resolver.schema.js";
+import {
+  TravelDataResult,
+  travelDataSchema,
+} from "../schema/retrieval.schema.js";
 
 export const searchTravelTool = tool(
   async (resolved: ResolverResult) => {

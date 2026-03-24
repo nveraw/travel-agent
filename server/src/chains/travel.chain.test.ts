@@ -5,14 +5,14 @@ import {
   mockResolvedClarifyData,
   mockResolvedData,
   mockTravelData,
-} from "../mock";
+} from "../mock.js";
 import {
   resolverParamSchema,
   resolverResultSchema,
-} from "../schema/resolver.schema";
-import { resolveQueryTool } from "../tools/resolver.tool";
-import { generateDataTool, searchTravelTool } from "../tools/retrieval.tool";
-import { planTravel } from "./travel.chain";
+} from "../schema/resolver.schema.js";
+import { resolveQueryTool } from "../tools/resolver.tool.js";
+import { generateDataTool, searchTravelTool } from "../tools/retrieval.tool.js";
+import { planTravel } from "./travel.chain.js";
 
 vi.mock("../tools/resolver.tool", () => ({
   resolveQueryTool: tool((query) => mockResolvedData, {

@@ -1,10 +1,10 @@
 import { HumanMessage, SystemMessage, tool } from "langchain";
-import { getModel } from "../lib/model";
+import { getModel } from "../lib/model.js";
 import {
   resolverParamSchema,
   ResolverResult,
   resolverResultSchema,
-} from "../schema/resolver.schema";
+} from "../schema/resolver.schema.js";
 
 const itineraryPrompt = `You are a travel destination resolver.
 Your job is to narrow down the best destination candidates based on the user's intent.
