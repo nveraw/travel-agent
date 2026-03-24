@@ -201,9 +201,9 @@ npm run test --workspace=server
 | `tools/retrieval.test.ts`     | Data generation produces valid `TravelDataResult`           |
 | `chains/travel.chain.test.ts` | End-to-end chain with mock data                             |
 
-> **Note:** Tests use `IS_TESTING = true` (Ollama) by default. Make sure Ollama is running locally with `llama3.1` pulled before running tests.
-
-- Download ollama: https://ollama.com/ (More guides and docs available here)
-- Open terminal and run the following command
-- Pull llama3.1: `ollama pull llama3.1`
-- Serve ollama: `ollama serve`
+> **Note:**
+>
+> - Download ollama: https://ollama.com/ (More guides and docs available here)
+> - Open terminal and run the following command
+> - Pull llama3.1: `ollama pull llama3.1`
+> - Serve ollama: `ollama serve`

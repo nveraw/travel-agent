@@ -2,7 +2,7 @@ import { ChatMistralAI } from "@langchain/mistralai";
 import { ChatOllama } from "@langchain/ollama";
 import "dotenv/config";
 
-const IS_TESTING = true;
+const IS_TESTING = false;
 
 export const getModel = (
   outputSchema?: any,
