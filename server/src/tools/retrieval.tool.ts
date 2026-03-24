@@ -65,7 +65,7 @@ export const generateDataTool = tool(
     return JSON.stringify(result);
   },
   {
-    name: "generate_fake_data",
+    name: "generate_travel_data",
     description: "AI-generate data when Supabase returns NO_DATA.",
     schema: resolverResultSchema,
   },

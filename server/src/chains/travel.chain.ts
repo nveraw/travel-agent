@@ -25,7 +25,7 @@ import { generateDataTool, searchTravelTool } from "../tools/retrieval.tool";
 const itineraryPrompt = `You are an expert travel consultant.
 Using ONLY the data provided, create a personalized, detailed, conversational itinerary.
 
-Travel agent flow: 1) Resolve destination/clarify. 2) searchTravel to fetch real data. 3) generate_fake_data if missing. 4) Build itinerary.
+Travel agent flow: 1) Resolve destination/clarify. 2) searchTravel to fetch real data. 3) generate_travel_data if missing. 4) Build itinerary.
 Use memory for follow-ups like "shorter trip".
 
 STRICT RULES:
@@ -80,86 +80,118 @@ const AgentState = new StateSchema({
   travelData: travelDataSchema.optional(),
 });
 
-const resolveNode: GraphNode<typeof AgentState> = async (state) => {
-  console.log("resolveNode...", state.messages.at(-1)?.content);
-  const result = await resolveQueryTool.invoke(state.messages.at(-1)?.content);
-  console.log("resolveNode", "result", result);
-  const parsed = resolverResultSchema.parse(result);
-  const message =
-    parsed.needsMoreInfo && parsed.clarifyingQuestion
-      ? new AIMessage({
-          content: parsed.clarifyingQuestion,
-        })
-      : new ToolMessage({
-          content: JSON.stringify(result),
-          tool_call_id: "resolve",
-        });
+const resolveNode: GraphNode<typeof AgentState> = async (state, config) => {
+  try {
+    const { signal } = config;
+    console.log("resolveNode...", state.messages.at(-1)?.content);
+    const result = await resolveQueryTool.invoke(
+      state.messages.at(-1)?.content,
+      {
+        signal,
+      },
+    );
+    console.log("resolveNode", "result", result);
+    const parsed = resolverResultSchema.parse(result);
+    const message =
+      parsed.needsMoreInfo && parsed.clarifyingQuestion
+        ? new AIMessage({
+            content: parsed.clarifyingQuestion,
+          })
+        : new ToolMessage({
+            content: JSON.stringify(result),
+            tool_call_id: "resolve",
+          });
 
-  return {
-    messages: [message],
-    resolvedQuery: parsed,
-  };
+    return {
+      messages: [message],
+      resolvedQuery: parsed,
+    };
+  } catch (err) {
+    console.error("resolveNode error:", err);
+    throw err;
+  }
 };
 
-const searchNode: GraphNode<typeof AgentState> = async (state) => {
-  const query = state.resolvedQuery;
-  if (!query)
-    return { messages: state.messages, resolvedQuery: state.resolvedQuery };
-  console.log("searchNode...", query);
-  const result = await searchTravelTool.invoke(query);
-  console.log("searchNode", "result", result);
-  if (result === "NO_DATA") {
+const searchNode: GraphNode<typeof AgentState> = async (state, config) => {
+  const noData = {
+    messages: [
+      new ToolMessage({ content: "NO_DATA found", tool_call_id: "search" }),
+    ],
+    resolvedQuery: state.resolvedQuery,
+    travelData: undefined,
+  };
+  try {
+    const { signal } = config;
+    const query = state.resolvedQuery;
+    if (!query || !query.candidates?.[0]?.city)
+      throw new Error("searchNode: missing resolvedQuery");
+    console.log("searchNode...", query);
+    const result = await searchTravelTool.invoke(query, { signal });
+    console.log("searchNode", "result", result);
+    if (result === "NO_DATA") {
+      return noData;
+    }
+    const parsed = travelDataSchema.parse(result);
     return {
       messages: [
-        new ToolMessage({ content: "NO_DATA found", tool_call_id: "search" }),
+        new ToolMessage({
+          content: JSON.stringify(result),
+          tool_call_id: "search",
+        }),
       ],
       resolvedQuery: state.resolvedQuery,
-      travelData: undefined,
+      travelData: parsed,
     };
+  } catch (err) {
+    console.error("searchNode error:", err);
+    return noData;
+    // do not throw error, run generateNode
+    // throw err;
   }
-  const parsed = travelDataSchema.parse(result);
-  return {
-    messages: [
-      new ToolMessage({
-        content: JSON.stringify(result),
-        tool_call_id: "search",
-      }),
-    ],
-    resolvedQuery: state.resolvedQuery,
-    travelData: parsed,
-  };
 };
 
-const generateNode: GraphNode<typeof AgentState> = async (state) => {
-  const query = state.resolvedQuery;
-  if (!query)
-    return { messages: state.messages, resolvedQuery: state.resolvedQuery };
-  console.log("generateNode...", query);
-  const result = await generateDataTool.invoke(query);
-  console.log("generateNode", "result", result);
-  const parsed = travelDataSchema.parse(result);
-  return {
-    messages: [
-      new ToolMessage({
-        content: JSON.stringify(result),
-        tool_call_id: "generate",
-      }),
-    ],
-    resolvedQuery: state.resolvedQuery,
-    travelData: parsed,
-  };
+const generateNode: GraphNode<typeof AgentState> = async (state, config) => {
+  try {
+    const { signal } = config;
+    const query = state.resolvedQuery;
+    if (!query || !query.candidates?.[0]?.city)
+      throw new Error("generateNode: missing resolvedQuery");
+    console.log("generateNode...", query);
+    const result = await generateDataTool.invoke(query, { signal });
+    console.log("generateNode", "result", result);
+    const parsed = travelDataSchema.parse(result);
+    return {
+      messages: [
+        new ToolMessage({
+          content: JSON.stringify(result),
+          tool_call_id: "generate",
+        }),
+      ],
+      resolvedQuery: state.resolvedQuery,
+      travelData: parsed,
+    };
+  } catch (err) {
+    console.error("generateNode error:", err);
+    throw err;
+  }
 };
 
-const itineraryNode: GraphNode<typeof AgentState> = async (state) => {
-  console.log("itineraryNode...");
-  const messages = [new SystemMessage(itineraryPrompt), ...state.messages];
-  const result = await getModel().invoke(messages); // No tools needed
-  console.log("itineraryNode", "result", result);
-  return { messages: [result] };
+const itineraryNode: GraphNode<typeof AgentState> = async (state, config) => {
+  try {
+    const { signal } = config;
+    console.log("itineraryNode...");
+    const messages = [new SystemMessage(itineraryPrompt), ...state.messages];
+    const result = await getModel().invoke(messages, { signal }); // No tools needed
+    console.log("itineraryNode", "result", result);
+    return { messages: [result] };
+  } catch (err) {
+    console.error("itineraryNode error:", err);
+    throw err;
+  }
 };
 
 const routeAfterResolve: ConditionalEdgeRouter<typeof AgentState> = (state) => {
-  const next = state.resolvedQuery?.needsMoreInfo ? END : "search";
+  const next = state.resolvedQuery?.needsMoreInfo ? "end" : "search";
   console.log("routeAfterResolve", next);
   return next;
 };
@@ -179,10 +211,9 @@ const graph = new StateGraph(AgentState)
 graph
   .addEdge(START, "resolve")
   .addConditionalEdges("resolve", routeAfterResolve, {
-    [END]: END,
+    end: END,
     search: "search",
   })
-  .addEdge("resolve", "search")
   .addConditionalEdges("search", routeAfterSearch, {
     generate: "generate",
     itinerary: "itinerary",
@@ -192,12 +223,12 @@ graph
 
 const app = graph.compile();
 
-export async function planTravel(
+export const planTravel = async (
   userQuery: string,
   threadId: string,
   onChunk: (chunk: any) => void,
   signal?: AbortSignal,
-): Promise<void> {
+): Promise<void> => {
   console.log("planTravel...", { userQuery, threadId });
   try {
     const stream = await app.stream(
@@ -207,6 +238,7 @@ export async function planTravel(
 
     for await (const [chunk] of stream as any) {
       if (AIMessage.isInstance(chunk)) {
+        if (signal?.aborted) break;
         onChunk(chunk.content);
       } else {
         // uncomment for logging tools response
@@ -214,7 +246,16 @@ export async function planTravel(
       }
     }
   } catch (err) {
+    if (
+      err instanceof Error &&
+      (err.name === "AbortError" ||
+        err.message === "Abort" ||
+        err.name === "DOMException")
+    ) {
+      console.log("aborted...");
+      return;
+    }
     console.error("planTravel error", err);
     throw err instanceof Error ? err : new Error("Unknown error");
   }
-}
+};

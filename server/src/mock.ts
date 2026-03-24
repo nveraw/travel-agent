@@ -15,6 +15,12 @@ export const mockResolvedData: ResolverResult = {
   clarifyingQuestion: "",
 };
 
+export const mockResolvedClarifyData: ResolverResult = {
+  candidates: [],
+  needsMoreInfo: true,
+  clarifyingQuestion: "What kind of trip are you thinking of?",
+};
+
 export const mockTravelData: TravelDataResult = {
   destination: "Paris, France",
   weatherByMonth: {

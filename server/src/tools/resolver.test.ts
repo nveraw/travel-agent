@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { mockResolvedData } from "../mock";
+import { mockResolvedClarifyData, mockResolvedData } from "../mock";
 import { resolverResultSchema } from "../schema/resolver.schema";
 import { resolveQueryTool } from "./resolver.tool";
 
@@ -74,11 +74,7 @@ describe("resolveQueryTool", () => {
   });
 
   test("return clarification from query", async () => {
-    mockModelInvoke.mockReturnValue({
-      candidates: [],
-      needsMoreInfo: true,
-      clarifyingQuestion: "What kind of trip are you thinking of?",
-    });
+    mockModelInvoke.mockReturnValue(mockResolvedClarifyData);
     const result = await resolveQueryTool.invoke("Hello");
 
     expect(result.candidates.length).toBeLessThanOrEqual(1);
