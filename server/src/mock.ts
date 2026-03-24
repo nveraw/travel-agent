@@ -1,9 +1,7 @@
 import { ResolverResult } from "./schema/resolver.schema";
-import { FakeDataResult } from "./schema/retrieval.schema";
+import { TravelDataResult } from "./schema/retrieval.schema";
 
-export const getResolvedData = (
-  obj: Partial<ResolverResult["candidates"][0]> = {},
-): ResolverResult => ({
+export const mockResolvedData: ResolverResult = {
   candidates: [
     {
       country: "Indonesia",
@@ -11,14 +9,13 @@ export const getResolvedData = (
       reason: "Exact match, no further filtering required",
       bestMonths: ["June", "July"],
       highlights: ["Beaches", "Temples", "Cultural Festivals"],
-      ...obj,
     },
   ],
   needsMoreInfo: false,
   clarifyingQuestion: "",
-});
+};
 
-export const fakeData: FakeDataResult = {
+export const mockTravelData: TravelDataResult = {
   destination: "Paris, France",
   weatherByMonth: {
     January: {

@@ -4,7 +4,7 @@ import {
   ResolverResult,
   resolverResultSchema,
 } from "../schema/resolver.schema";
-import { FakeDataResult, fakeDataSchema } from "../schema/retrieval.schema";
+import { TravelDataResult, travelDataSchema } from "../schema/retrieval.schema";
 
 export const searchTravelTool = tool(
   async (resolved: ResolverResult) => {
@@ -18,7 +18,7 @@ export const searchTravelTool = tool(
         }),
       });
       if (response.ok) {
-        const data: FakeDataResult = await response.json();
+        const data: TravelDataResult = await response.json();
         console.log("searchTravel data", data);
         return data ? JSON.stringify(data) : "NO_DATA";
       }
@@ -48,15 +48,15 @@ Be creative but realistic.`;
 
 export const generateDataTool = tool(
   async (resolved: ResolverResult) => {
-    const agent = getModel(fakeDataSchema, 0.7);
-    console.log("generateFakeData...", resolved);
-    const result: FakeDataResult = await agent.invoke([
+    const agent = getModel(travelDataSchema, 0.7);
+    console.log("generateTravelData...", resolved);
+    const result: TravelDataResult = await agent.invoke([
       new SystemMessage(prompt),
       new HumanMessage(
         `infer the location and time: ${JSON.stringify(resolved)}`,
       ),
     ]);
-    console.log("generateFakeData result", JSON.stringify(result));
+    console.log("generateTravelData result", JSON.stringify(result));
     fetch("http://localhost:3001/internal/data", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

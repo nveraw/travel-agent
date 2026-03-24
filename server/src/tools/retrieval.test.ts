@@ -1,15 +1,15 @@
+import { ToolMessage } from "langchain";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { fakeData, getResolvedData } from "../mock";
-import { fakeDataSchema } from "../schema/retrieval.schema";
+import { mockResolvedData, mockTravelData } from "../mock";
+import { travelDataSchema } from "../schema/retrieval.schema";
 import { generateDataTool, searchTravelTool } from "./retrieval.tool";
 
 vi.mock("node-fetch"); // Global fetch mock
 
-const getResolverResult = vi.fn(getResolvedData);
-
+const mockModelResolvedQuery = vi.fn();
 vi.mock("../lib/model", () => ({
   getModel: vi.fn().mockReturnValue({
-    invoke: vi.fn(() => fakeData),
+    invoke: vi.fn(() => mockTravelData),
   }),
 }));
 
@@ -21,12 +21,12 @@ describe("searchTravelTool API call", () => {
   test("calls API with correct destination", async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: vi.fn().mockResolvedValue(getResolvedData()),
+      json: vi.fn().mockResolvedValue(mockResolvedData),
     } as any);
 
     global.fetch = mockFetch;
 
-    const result = await searchTravelTool.invoke(getResolverResult());
+    const result = await searchTravelTool.invoke(mockResolvedData);
 
     expect(mockFetch).toHaveBeenCalledWith(
       "http://localhost:3001/internal/data",
@@ -37,10 +37,20 @@ describe("searchTravelTool API call", () => {
       }),
     );
 
-    expect(result).toBe(JSON.stringify(getResolvedData()));
+    expect(result).toBe(JSON.stringify(mockResolvedData));
   });
 
   test("returns NO_DATA on API error", async () => {
+    mockModelResolvedQuery.mockReturnValue({
+      ...mockResolvedData,
+      candidates: [
+        {
+          ...mockResolvedData.candidates[0],
+          country: "Planet",
+          city: "Mars",
+        },
+      ],
+    });
     const mockResponse = { error: "No data" };
     const mockFetch = vi.fn().mockResolvedValue({
       ok: false,
@@ -49,12 +59,7 @@ describe("searchTravelTool API call", () => {
 
     global.fetch = mockFetch;
 
-    const result = await searchTravelTool.invoke(
-      getResolverResult({
-        country: "Planet",
-        city: "Mars",
-      }),
-    );
+    const result = await searchTravelTool.invoke(mockModelResolvedQuery());
 
     expect(result).toBe("NO_DATA");
   });
@@ -62,17 +67,26 @@ describe("searchTravelTool API call", () => {
 
 describe("generateDataTool AI call", () => {
   test("generate data tool return data", async () => {
-    const result = await generateDataTool.invoke(
-      getResolverResult({ country: "France", city: "Paris" }),
-    );
-    expect(result).toEqual(expect.schemaMatching(fakeDataSchema));
+    mockModelResolvedQuery.mockReturnValue({
+      ...mockResolvedData,
+      candidates: [
+        {
+          ...mockResolvedData.candidates[0],
+          country: "France",
+          city: "Paris",
+        },
+      ],
+    });
+    const result = await generateDataTool.invoke(mockModelResolvedQuery());
+    const obj = ToolMessage.isInstance(result) ? result : JSON.parse(result);
+    expect(obj).toEqual(expect.schemaMatching(travelDataSchema));
     expect(global.fetch).toHaveBeenCalledWith(
       "http://localhost:3001/internal/data",
       expect.objectContaining({
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(result),
+        body: result,
       }),
     );
-  }, 200_000);
+  });
 });

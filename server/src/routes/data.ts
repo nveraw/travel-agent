@@ -1,6 +1,6 @@
 import { Request, Response, Router } from "express";
 import { supabase } from "../lib/supabase";
-import { FakeDataResult } from "../schema/retrieval.schema";
+import { TravelDataResult } from "../schema/retrieval.schema";
 
 const router = Router();
 
@@ -160,7 +160,7 @@ const insertLocation = async (location: {
 };
 
 router.post("/data", async (req: Request) => {
-  const { data }: { data: FakeDataResult } = req.body;
+  const { data }: { data: TravelDataResult } = req.body;
 
   const destinationId = await insertSelect("destinations", {
     name: data.destination,

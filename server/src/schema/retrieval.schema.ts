@@ -14,7 +14,7 @@ const locationSchema = z.object({
   city: z.string(),
   country: z.string(),
 });
-export const fakeDataSchema = z.object({
+export const travelDataSchema = z.object({
   destination: z
     .string()
     .describe(
@@ -129,4 +129,4 @@ export const fakeDataSchema = z.object({
     .max(3),
   travelTips: z.array(z.string()).max(2),
 });
-export type FakeDataResult = z.infer<typeof fakeDataSchema>;
+export type TravelDataResult = z.infer<typeof travelDataSchema>;

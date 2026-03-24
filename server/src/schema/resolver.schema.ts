@@ -5,7 +5,9 @@ export const resolverResultSchema = z.object({
     .array(
       z.object({
         country: z.string().describe("Country name"),
-        city: z.string().describe("Specific city if mentioned or inferred"),
+        city: z
+          .string()
+          .describe("Specific city if mentioned or inferred, cannot be empty"),
         reason: z
           .string()
           .describe("Why this destination suits the user's intent"),

@@ -18,7 +18,7 @@ import {
 import { getModel } from "../lib/model";
 import { loggingMiddleware } from "../middleware/log.middleware";
 import { resolverResultSchema } from "../schema/resolver.schema";
-import { fakeDataSchema } from "../schema/retrieval.schema";
+import { travelDataSchema } from "../schema/retrieval.schema";
 import { resolveQueryTool } from "../tools/resolver.tool";
 import { generateDataTool, searchTravelTool } from "../tools/retrieval.tool";
 
@@ -77,7 +77,7 @@ const agent = createAgent({
 const AgentState = new StateSchema({
   messages: MessagesValue,
   resolvedQuery: resolverResultSchema.optional(),
-  travelData: fakeDataSchema.optional(),
+  travelData: travelDataSchema.optional(),
 });
 
 const resolveNode: GraphNode<typeof AgentState> = async (state) => {
@@ -117,7 +117,7 @@ const searchNode: GraphNode<typeof AgentState> = async (state) => {
       travelData: undefined,
     };
   }
-  const parsed = fakeDataSchema.parse(result);
+  const parsed = travelDataSchema.parse(result);
   return {
     messages: [
       new ToolMessage({
@@ -137,7 +137,7 @@ const generateNode: GraphNode<typeof AgentState> = async (state) => {
   console.log("generateNode...", query);
   const result = await generateDataTool.invoke(query);
   console.log("generateNode", "result", result);
-  const parsed = fakeDataSchema.parse(result);
+  const parsed = travelDataSchema.parse(result);
   return {
     messages: [
       new ToolMessage({
@@ -200,22 +200,17 @@ export async function planTravel(
 ): Promise<void> {
   console.log("planTravel...", { userQuery, threadId });
   try {
-    // const stream = await agent.stream(
-    //   {
-    //     messages: [new HumanMessage(userQuery)],
-    //   },
-    //   { signal, configurable: { thread_id: threadId } }, // Memory persists here
-    // );
     const stream = await app.stream(
       { messages: [new HumanMessage(userQuery)] },
       { streamMode: "messages", signal, configurable: { thread_id: threadId } },
     );
 
-    for await (const [chunk] of stream) {
-      if (signal?.aborted) break;
-      if (chunk?.content) {
-        console.log("planTravel content", chunk.content);
+    for await (const [chunk] of stream as any) {
+      if (AIMessage.isInstance(chunk)) {
         onChunk(chunk.content);
+      } else {
+        // uncomment for logging tools response
+        // console.log("Node complete:", Object.keys(chunk)[0]);
       }
     }
   } catch (err) {
