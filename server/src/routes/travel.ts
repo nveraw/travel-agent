@@ -1,5 +1,5 @@
 import { Request, Response, Router } from "express";
-import { planTravel } from "../chains/travel.chain.js";
+import { planTravel } from "../chains/travel.chain";
 
 const router = Router();
 
@@ -31,14 +31,13 @@ router.post("/travel", async (req: Request, res: Response) => {
   });
 
   try {
-    sendEvent("status", "📝 Building your itinerary...");
-
     await planTravel(
       message,
       threadId,
       (content) => {
         if (!controller.signal.aborted) sendEvent("chunk", content);
       },
+      (status) => sendEvent("status", status),
       controller.signal,
     );
 

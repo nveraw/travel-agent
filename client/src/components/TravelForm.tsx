@@ -26,17 +26,18 @@ function TravelForm({ isLoading, onSend, onStop, className }: TravelFormProps) {
 
   return (
     <form
-      className={`w-full max-w-159.5 mx-auto ${className}`}
+      className={`w-full max-w-159.5 mx-auto mb-3 ${className}`}
       onSubmit={(e) => {
         e.preventDefault();
         onSend(inputMsg.trim());
         setInputMessage("");
       }}
     >
-      <div className="flex w-full h-min">
+      <div className="flex w-full h-min shadow-2xl p-3 rounded-2xl">
         <textarea
+          autoFocus
           ref={textareaRef}
-          className="mr-2 p-2 flex-1 rounded-md outline-2 outline-gray-200 resize-none overflow-hidden"
+          className="mr-2 p-2 flex-1 rounded-md outline-0 resize-none overflow-hidden"
           value={inputMsg}
           onChange={(e) => setInputMessage(e.target.value)}
           placeholder="'I want to go to Japan in spring' or 'suggest a winter destination'"
@@ -48,22 +49,13 @@ function TravelForm({ isLoading, onSend, onStop, className }: TravelFormProps) {
             el.style.height = `${el.scrollHeight}px`;
           }}
         />
-        {isLoading ? (
-          <button
-            className="h-10 w-10 mt-auto text-2xl p-0 flex items-center justify-center bg-gray-50"
-            type="button"
-            onClick={handleStop}
-          >
-            ⏹
-          </button>
-        ) : (
-          <button
-            className="h-10 w-10 mt-auto text-2xl p-0 flex items-center justify-center bg-gray-50"
-            type="submit"
-          >
-            ➤
-          </button>
-        )}
+        <button
+          className="h-10 w-10 mt-auto text-2xl p-0 flex items-center justify-center bg-gray-50 rounded-xl"
+          type={isLoading ? "button" : "submit"}
+          onClick={isLoading ? handleStop : () => {}}
+        >
+          {isLoading ? "⏹" : "➤"}
+        </button>
       </div>
     </form>
   );

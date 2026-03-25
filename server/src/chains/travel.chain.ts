@@ -1,6 +1,7 @@
 import { InMemoryStore } from "@langchain/langgraph";
 import { MemorySaver } from "@langchain/langgraph-checkpoint";
 import { AIMessage, HumanMessage } from "langchain";
+import { Stage } from "../../../shared/stage.js";
 import { graph } from "./graph/graph.js";
 
 const checkpointer = new MemorySaver();
@@ -10,6 +11,7 @@ export const planTravel = async (
   userQuery: string,
   threadId: string,
   onChunk: (chunk: any) => void,
+  onStatus: (status: Stage) => void,
   signal?: AbortSignal,
 ): Promise<void> => {
   const app = graph.compile({ checkpointer, store });
@@ -26,6 +28,7 @@ export const planTravel = async (
     );
 
     for await (const [chunk, metadata] of stream as any) {
+      console.log(chunk, metadata);
       if (
         metadata?.langgraph_node === "itinerary" &&
         AIMessage.isInstance(chunk)
@@ -35,6 +38,7 @@ export const planTravel = async (
       } else {
         // uncomment for logging tools response
         // console.log("Node complete:", Object.keys(chunk)[0]);
+        onStatus(metadata?.langgraph_node);
       }
     }
   } catch (err) {

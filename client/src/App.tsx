@@ -1,5 +1,7 @@
 import { useCallback, useRef, useState } from "react";
+import type { Stage } from "../../shared/stage";
 import "./App.css";
+import Loading from "./components/Loading";
 import TravelForm from "./components/TravelForm";
 import TravelItinerary from "./components/TravelItinerary";
 
@@ -7,7 +9,7 @@ function App() {
   const [conversations, setConversations] = useState<Record<string, string>>(
     {},
   );
-  const [loadingMsg, setLoadingMsg] = useState("");
+  const [loadingStage, setLoadingStage] = useState<Stage | null>(null);
 
   const sessionId = useRef(crypto.randomUUID());
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -15,7 +17,7 @@ function App() {
   const handleStop = () => {
     abortControllerRef.current?.abort();
     // console.log("stop");
-    setLoadingMsg("");
+    setLoadingStage(null);
   };
 
   const streamTravel = useCallback(async (message: string) => {
@@ -28,7 +30,7 @@ function App() {
     setConversations((c) => ({ ...c, [message]: "" }));
     // console.log("calling api");
 
-    setLoadingMsg("Designing your next unforgettable trip…");
+    setLoadingStage("start");
 
     try {
       const BASE_URL = import.meta.env.PROD
@@ -75,21 +77,17 @@ function App() {
 
             switch (type) {
               case "status":
-                setLoadingMsg(data);
+                setLoadingStage(data);
                 break;
               case "chunk":
                 chat += data;
                 setConversations((c) => ({ ...c, [message]: chat }));
-                break;
-              case "clarify":
-                setConversations((c) => ({ ...c, [message]: data }));
                 break;
               case "error":
                 console.error("api error: ", data);
                 break;
 
               default:
-                setLoadingMsg("");
                 break;
             }
           } catch {
@@ -98,24 +96,26 @@ function App() {
         }
       }
     } catch (err) {
-      if ((err as Error).name === "AbortError") {
-        // console.log("Cancelled");
-        setLoadingMsg("");
-      } else {
-        // console.log(err instanceof Error ? err.message : "Unknown error");
-        setLoadingMsg("");
+      if ((err as Error).name !== "AbortError") {
+        console.log(err instanceof Error ? err.message : "Unknown error");
       }
     } finally {
-      setLoadingMsg("");
+      setLoadingStage(null);
     }
   }, []);
 
   return (
     <main className="flex flex-col w-full h-full">
-      <TravelItinerary conversations={conversations} loadingMsg={loadingMsg} />
+      <TravelItinerary conversations={conversations}>
+        {!!loadingStage && (
+          <Loading
+            stage={loadingStage === "generate" ? "search" : loadingStage}
+          />
+        )}
+      </TravelItinerary>
       <TravelForm
         className={Object.keys(conversations).length ? "" : "flex-1"}
-        isLoading={loadingMsg.length > 0}
+        isLoading={!!loadingStage}
         onSend={streamTravel}
         onStop={handleStop}
       />
