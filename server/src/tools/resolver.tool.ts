@@ -20,28 +20,56 @@ RULES:
 - Always prefer quality over quantity — 2 great picks beat 4 mediocre ones
 `;
 
+const updateUserPrefs = async (
+  userQuery: string,
+  config: Record<string, any>,
+  result: ResolverResult,
+) => {
+  const { store, thread_id } = config?.configurable || {};
+  const userPrefs = await store.get(["users", thread_id], "travel_prefs");
+  const newUserPrefs = {
+    ...(userPrefs?.value ?? {}),
+    lastDestination: result.candidates,
+    history: [
+      ...(userPrefs?.value?.history ?? []),
+      {
+        query: userQuery,
+        city: result.candidates[0]?.city,
+        country: result.candidates[0]?.country,
+        bestMonths: result.candidates[0]?.bestMonths,
+        timestamp: new Date().toISOString(),
+      },
+    ].slice(-5),
+  };
+  console.log("updateUserPrefs...", newUserPrefs);
+  await store.put(["users", thread_id], "travel_prefs", newUserPrefs);
+};
+
 export const resolveQueryTool = tool(
   async (userQuery: string, config): Promise<ResolverResult> => {
     const agent = getModel(resolverResultSchema);
     console.log("resolveQuery...", userQuery);
 
     let historyContext = "";
-    if (config?.configurable?.user_pref) {
-      const prefs = config?.configurable?.user_pref || "unknown";
-      historyContext = prefs?.value
-        ? `\nUser prefs: ${JSON.stringify(prefs.value)}`
+    const { store, thread_id } = config?.configurable || {};
+    let userPrefs;
+    if (store && thread_id) {
+      userPrefs = await store.get(["users", thread_id], "travel_prefs");
+      historyContext = userPrefs?.value
+        ? `\nUser prefs: ${JSON.stringify(userPrefs.value)}`
         : "";
     }
 
-    const result = await agent.invoke(
+    const result: ResolverResult = await agent.invoke(
       [
         new SystemMessage(resolveQueryPrompt + historyContext),
         new HumanMessage(userQuery),
       ],
       config,
     );
+    updateUserPrefs(userQuery, config, result);
     console.log("resolveQuery result", JSON.stringify(result));
-    return result as ResolverResult;
+    return result;
   },
   {
     name: "resolve_query",

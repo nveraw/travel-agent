@@ -1,5 +1,5 @@
 import { type GraphNode } from "@langchain/langgraph";
-import { AIMessage, HumanMessage, ToolMessage } from "langchain";
+import { AIMessage, ToolMessage } from "langchain";
 import { resolverResultSchema } from "../../schema/resolver.schema.js";
 import { resolveQueryTool } from "../../tools/resolver.tool.js";
 import { AgentState } from "./graph.schema.js";
@@ -9,14 +9,11 @@ export const resolveNode: GraphNode<typeof AgentState> = async (
   config,
 ) => {
   try {
-    const fullMessage: string = state.messages
-      .map((msg) =>
-        HumanMessage.isInstance(msg) ? (msg.content as string) : "",
-      )
-      .filter((msg) => !!msg)
-      .join("\n");
-    console.log("resolveNode...", fullMessage);
-    const result = await resolveQueryTool.invoke(fullMessage, config);
+    console.log("resolveNode...", state.messages.at(-1)?.content);
+    const result = await resolveQueryTool.invoke(
+      state.messages.at(-1)?.content,
+      config,
+    );
     console.log("resolveNode", "result", result);
     const parsed = resolverResultSchema.parse(result);
     const message =

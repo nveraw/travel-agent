@@ -15,20 +15,18 @@ export const planTravel = async (
   signal?: AbortSignal,
 ): Promise<void> => {
   const app = graph.compile({ checkpointer, store });
-  const userPrefs = await store.get(["users", threadId], "travel_prefs");
-  console.log("planTravel...", { userQuery, threadId });
+  console.log("planTravel...", userQuery);
   try {
     const stream = await app.stream(
       { messages: [new HumanMessage(userQuery)] },
       {
         streamMode: "messages",
         signal,
-        configurable: { thread_id: threadId, user_pref: userPrefs },
+        configurable: { thread_id: threadId, store },
       },
     );
 
     for await (const [chunk, metadata] of stream as any) {
-      console.log(chunk, metadata);
       if (
         metadata?.langgraph_node === "itinerary" &&
         AIMessage.isInstance(chunk)

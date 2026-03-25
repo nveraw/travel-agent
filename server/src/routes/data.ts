@@ -11,6 +11,7 @@ router.get("/data", async (req: Request, res: Response) => {
       res.status(400).json({ error: "destination is required" });
       return;
     }
+    console.log("selecting data...", destination);
 
     const { data } = await supabase
       .from("destinations")
@@ -92,6 +93,7 @@ router.get("/data", async (req: Request, res: Response) => {
       )
       .ilike("name", destination.toString())
       .single();
+    console.log("selecting data", data);
 
     if (!data) {
       res.status(404).json({ error: "Destination not found" });

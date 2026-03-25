@@ -11,11 +11,7 @@ function Loading({ stage }: { stage?: Stage }) {
     return null;
   }
   const loadingState = Object.keys(LOADING_MESSAGES);
-  const currentIndex = stage === "generate" ? 2 : loadingState.indexOf(stage);
-
-  if (currentIndex === -1) {
-    return null;
-  }
+  const currentIndex = loadingState.indexOf(stage);
 
   return (
     <div
