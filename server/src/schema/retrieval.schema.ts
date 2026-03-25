@@ -130,3 +130,4 @@ export const travelDataSchema = z.object({
   travelTips: z.array(z.string()).max(2),
 });
 export type TravelDataResult = z.infer<typeof travelDataSchema>;
+export const searchParamSchema = z.string().describe("city name");

@@ -5,21 +5,23 @@ import {
   resolverResultSchema,
 } from "../schema/resolver.schema.js";
 import {
+  searchParamSchema,
   TravelDataResult,
   travelDataSchema,
 } from "../schema/retrieval.schema.js";
 
 export const searchTravelTool = tool(
-  async (resolved: ResolverResult) => {
+  async (city: string, config) => {
     try {
-      console.log("searchTravel...", resolved);
-      const response = await fetch("http://localhost:3001/internal/data", {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          destination: resolved.candidates[0].city,
-        }),
-      });
+      console.log("searchTravel...", city);
+      const response = await fetch(
+        `http://localhost:3001/internal/data?destination=${encodeURIComponent(city)}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          ...config,
+        },
+      );
       if (response.ok) {
         const data: TravelDataResult = await response.json();
         console.log("searchTravel data", data);
@@ -34,7 +36,7 @@ export const searchTravelTool = tool(
   {
     name: "search_travel",
     description: "Fetch real data from Supabase by destination.",
-    schema: resolverResultSchema,
+    schema: searchParamSchema,
   },
 );
 
@@ -50,20 +52,23 @@ bestSeason for the Popular spots should also based on the bestMonth in given con
 Be creative but realistic.`;
 
 export const generateDataTool = tool(
-  async (resolved: ResolverResult) => {
+  async (resolved: ResolverResult, config) => {
     const agent = getModel(travelDataSchema, 0.7);
     console.log("generateTravelData...", resolved);
-    const result: TravelDataResult = await agent.invoke([
-      new SystemMessage(prompt),
-      new HumanMessage(
-        `infer the location and time: ${JSON.stringify(resolved)}`,
-      ),
-    ]);
+    const result: TravelDataResult = await agent.invoke(
+      [
+        new SystemMessage(prompt),
+        new HumanMessage(
+          `infer the location and time: ${JSON.stringify(resolved)}`,
+        ),
+      ],
+      config,
+    );
     console.log("generateTravelData result", JSON.stringify(result));
     fetch("http://localhost:3001/internal/data", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(result),
+      body: JSON.stringify({ data: result }),
     });
     return JSON.stringify(result);
   },

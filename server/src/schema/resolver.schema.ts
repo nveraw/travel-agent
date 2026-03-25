@@ -48,7 +48,5 @@ export const resolverResultSchema = z.object({
 });
 export const resolverParamSchema = z
   .string()
-  .describe(
-    "User's travel query, e.g. 'I want a warm beach vacation in December'",
-  );
+  .describe("full conversation for context including user query");
 export type ResolverResult = z.infer<typeof resolverResultSchema>;

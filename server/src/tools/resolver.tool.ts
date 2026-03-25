@@ -6,12 +6,13 @@ import {
   resolverResultSchema,
 } from "../schema/resolver.schema.js";
 
-const itineraryPrompt = `You are a travel destination resolver.
+const resolveQueryPrompt = `You are a travel destination resolver.
 Your job is to narrow down the best destination candidates based on the user's intent.
 
 RULES:
 - Return 1 destination candidates max — never brute force all countries
 - Use your knowledge of seasons, climate, festivals, and travel trends to pick the best matches
+- If the user is vague (e.g. "somewhere warm"), pick the top 3-4 best matches
 - If the user mentions only a country, set city to the most iconic/popular city based on climate, seasons and festivals for that country
 - If the user mentions a specific city, use that city exactly and set the country
 - If the user is vague (e.g. "somewhere warm"), pick the top best matches
@@ -19,18 +20,26 @@ RULES:
 - Always prefer quality over quantity — 2 great picks beat 4 mediocre ones
 `;
 
-// - If the user is vague (e.g. "somewhere warm"), pick the top 3-4 best matches
-// - Consider conversation history — if user said "winter trip" before and now says "what about asia", resolve asian winter destinations
-
 export const resolveQueryTool = tool(
-  async (userQuery: string): Promise<ResolverResult> => {
+  async (userQuery: string, config): Promise<ResolverResult> => {
     const agent = getModel(resolverResultSchema);
     console.log("resolveQuery...", userQuery);
 
-    const result = await agent.invoke([
-      new SystemMessage(itineraryPrompt),
-      new HumanMessage(userQuery),
-    ]);
+    let historyContext = "";
+    if (config?.configurable?.user_pref) {
+      const prefs = config?.configurable?.user_pref || "unknown";
+      historyContext = prefs?.value
+        ? `\nUser prefs: ${JSON.stringify(prefs.value)}`
+        : "";
+    }
+
+    const result = await agent.invoke(
+      [
+        new SystemMessage(resolveQueryPrompt + historyContext),
+        new HumanMessage(userQuery),
+      ],
+      config,
+    );
     console.log("resolveQuery result", JSON.stringify(result));
     return result as ResolverResult;
   },

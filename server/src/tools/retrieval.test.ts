@@ -33,12 +33,8 @@ describe("searchTravelTool API call", () => {
     const result = await searchTravelTool.invoke(mockResolvedData);
 
     expect(mockFetch).toHaveBeenCalledWith(
-      "http://localhost:3001/internal/data",
-      expect.objectContaining({
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ destination: "Bali" }),
-      }),
+      "http://localhost:3001/internal/data?destination=Bali",
+      expect.objectContaining({ method: "GET" }),
     );
 
     expect(result).toBe(JSON.stringify(mockResolvedData));

@@ -6,10 +6,7 @@ import {
   mockResolvedData,
   mockTravelData,
 } from "../mock.js";
-import {
-  resolverParamSchema,
-  resolverResultSchema,
-} from "../schema/resolver.schema.js";
+import { resolverParamSchema } from "../schema/resolver.schema.js";
 import { resolveQueryTool } from "../tools/resolver.tool.js";
 import { generateDataTool, searchTravelTool } from "../tools/retrieval.tool.js";
 import { planTravel } from "./travel.chain.js";
@@ -22,13 +19,13 @@ vi.mock("../tools/resolver.tool", () => ({
 }));
 
 vi.mock("../tools/retrieval.tool", () => ({
-  searchTravelTool: tool((resolved) => mockTravelData, {
+  searchTravelTool: tool(() => JSON.stringify(mockTravelData), {
     name: "search_travel",
-    schema: resolverResultSchema,
+    schema: resolverParamSchema,
   }),
-  generateDataTool: tool((resolved) => mockTravelData, {
+  generateDataTool: tool(() => JSON.stringify(mockTravelData), {
     name: "search_travel",
-    schema: resolverResultSchema,
+    schema: resolverParamSchema,
   }),
 }));
 
@@ -50,7 +47,6 @@ describe("planTravel", () => {
   });
 
   test("should response with itenary", async () => {
-    const controller = new AbortController();
     const chunks: string[] = [];
 
     await planTravel("Trip to Bali", "test-thread", (chunk) =>
