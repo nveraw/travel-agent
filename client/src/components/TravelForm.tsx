@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import { useState, type KeyboardEvent, type MouseEvent } from "react";
 import { useAutoResizeTextarea } from "../hooks/useAutoResizeTextArea";
 
@@ -29,7 +30,7 @@ function TravelForm({ isLoading, onSend, onStop, className }: TravelFormProps) {
       className={`w-full max-w-159.5 mx-auto mb-3 ${className}`}
       onSubmit={(e) => {
         e.preventDefault();
-        onSend(inputMsg.trim());
+        onSend(inputMsg);
         setInputMessage("");
       }}
     >
@@ -39,7 +40,9 @@ function TravelForm({ isLoading, onSend, onStop, className }: TravelFormProps) {
           ref={textareaRef}
           className="mr-2 p-2 flex-1 rounded-md outline-0 resize-none overflow-hidden"
           value={inputMsg}
-          onChange={(e) => setInputMessage(e.target.value)}
+          onChange={(e) =>
+            setInputMessage(DOMPurify.sanitize((e.target.value ?? "").trim()))
+          }
           placeholder="'I want to go to Japan in spring' or 'suggest a winter destination'"
           rows={1}
           onKeyDown={handleKeyDown}
