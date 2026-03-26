@@ -1,6 +1,10 @@
 import { Request, Response, Router } from "express";
 import { supabase } from "../lib/supabase.js";
-import { TravelDataResult } from "../schema/retrieval.schema.js";
+import {
+  HotelAmenity,
+  SupabaseDataResult,
+  TravelDataResult,
+} from "../schema/retrieval.schema.js";
 
 const router = Router();
 
@@ -13,7 +17,7 @@ router.get("/data", async (req: Request, res: Response) => {
     }
     console.log("selecting data...", destination);
 
-    const { data } = await supabase
+    const { data: rawData } = await supabase
       .from("destinations")
       .select(
         `
@@ -93,51 +97,38 @@ router.get("/data", async (req: Request, res: Response) => {
       )
       .ilike("name", `%${destination.toString()}%`)
       .single();
-    console.log("selecting data", data);
+    console.log("selecting data", JSON.stringify(rawData));
 
-    if (!data) {
+    if (!rawData) {
       res.status(404).json({ error: "Destination not found" });
       return;
     }
-
-    res.json({
-      destination: data.destination,
-
+    const data = rawData as unknown as SupabaseDataResult;
+    const result: TravelDataResult = {
+      ...data,
       weatherByMonth: Object.fromEntries(
-        data.weather.map((w) => [
-          w.month,
+        data.weather.map((weather) => [
+          weather.month,
           {
-            condition: w.condition,
-            tempCelsius: w.tempCelsius,
-            humidity: w.humidity,
+            condition: weather.condition,
+            tempCelsius: weather.tempCelsius,
+            humidity: weather.humidity,
           },
         ]),
       ),
-
-      popularSpots: data.popularSpots.slice(0, 3),
-
-      popularFoods: data.popularFoods.slice(0, 3).map((food) => ({
-        name: food.name,
-        description: food.description,
-        priceRange: food.priceRange,
-        bestPlaceToTry: food.bestPlaceToTry.map((r) => ({
-          name: r.name,
-          location: r.location,
-        }))[0],
-      })),
-
       recommendedHotels: data.recommendedHotels.slice(0, 2).map((hotel) => ({
         name: hotel.name,
         starRating: hotel.starRating,
         location: hotel.location,
         pricePerNightUSD: hotel.pricePerNightUSD,
-        amenities: hotel.amenities.map((a) => a.amenity),
+        amenities: hotel.amenities.map(
+          (hotelAmenity) => hotelAmenity.amenity as HotelAmenity,
+        ),
       })),
-
-      ongoingFestivals: data.ongoingFestivals.slice(0, 3),
-
       travelTips: data.travelTips.map((t) => t.tip).slice(0, 2),
-    });
+    };
+
+    res.json(result);
   } catch (err) {
     console.error("GET /data error:", err);
     res.status(500).json({ error: "Failed to retrieve destination data" });

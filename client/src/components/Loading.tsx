@@ -1,9 +1,9 @@
 import type { Stage } from "../../../shared/stage.js";
 
 const LOADING_MESSAGES = {
-  ["start"]: "Resolving destination...",
-  ["resolve"]: "Pulling local information...",
-  ["search"]: "Generating itinerary...",
+  start: "Scouting hidden gems...",
+  resolve: "Curating local experiences...",
+  search: "Finalizing your custom schedule...",
 };
 
 function Loading({ stage }: { stage?: Stage }) {

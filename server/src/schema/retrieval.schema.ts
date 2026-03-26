@@ -1,6 +1,6 @@
 import * as z from "zod";
 
-const monthSchema = z.object({
+const weatherSchema = z.object({
   condition: z.enum(["sunny", "rainy", "snowy", "cloudy", "stormy"]),
   tempCelsius: z.number(),
   humidity: z.enum(["low", "medium", "high"]),
@@ -14,6 +14,16 @@ const locationSchema = z.object({
   city: z.string(),
   country: z.string(),
 });
+const hotelAmenity = z.enum([
+  "wifi",
+  "pool",
+  "spa",
+  "gym",
+  "restaurant",
+  "bar",
+  "parking",
+  "airport shuttle",
+]);
 export const travelDataSchema = z.object({
   destination: z
     .string()
@@ -22,18 +32,18 @@ export const travelDataSchema = z.object({
     ),
   weatherByMonth: z
     .object({
-      January: monthSchema,
-      February: monthSchema,
-      March: monthSchema,
-      April: monthSchema,
-      May: monthSchema,
-      June: monthSchema,
-      July: monthSchema,
-      August: monthSchema,
-      September: monthSchema,
-      October: monthSchema,
-      November: monthSchema,
-      December: monthSchema,
+      January: weatherSchema,
+      February: weatherSchema,
+      March: weatherSchema,
+      April: weatherSchema,
+      May: weatherSchema,
+      June: weatherSchema,
+      July: weatherSchema,
+      August: weatherSchema,
+      September: weatherSchema,
+      October: weatherSchema,
+      November: weatherSchema,
+      December: weatherSchema,
     })
     .partial()
     .describe(""),
@@ -80,18 +90,7 @@ export const travelDataSchema = z.object({
         starRating: z.number().min(1).max(5),
         location: locationSchema,
         pricePerNightUSD: z.number(),
-        amenities: z.array(
-          z.enum([
-            "wifi",
-            "pool",
-            "spa",
-            "gym",
-            "restaurant",
-            "bar",
-            "parking",
-            "airport shuttle",
-          ]),
-        ),
+        amenities: z.array(hotelAmenity),
       }),
     )
     .max(2),
@@ -131,3 +130,21 @@ export const travelDataSchema = z.object({
 });
 export type TravelDataResult = z.infer<typeof travelDataSchema>;
 export const searchParamSchema = z.string().describe("city name");
+
+export type HotelAmenity = z.infer<typeof hotelAmenity>;
+export type SupabaseDataResult = Omit<
+  TravelDataResult,
+  "recommendedHotels" | "travelTips" | "weatherByMonth"
+> & {
+  weather: (z.infer<typeof weatherSchema> & {
+    month: keyof TravelDataResult["weatherByMonth"];
+  })[];
+  recommendedHotels: {
+    name: string;
+    location: z.infer<typeof locationSchema>;
+    amenities: { amenity: string }[];
+    starRating: 1 | 2 | 3 | 4 | 5;
+    pricePerNightUSD: number;
+  }[];
+  travelTips: { tip: string }[];
+};

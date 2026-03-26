@@ -1,5 +1,8 @@
 import { ResolverResult } from "./schema/resolver.schema.js";
-import { TravelDataResult } from "./schema/retrieval.schema.js";
+import {
+  SupabaseDataResult,
+  TravelDataResult,
+} from "./schema/retrieval.schema.js";
 
 export const mockResolvedData: ResolverResult = {
   candidates: [
@@ -178,5 +181,177 @@ export const mockTravelData: TravelDataResult = {
   travelTips: [
     "Learn some basic French phrases to communicate with locals.",
     "Dress modestly when visiting churches or cathedrals.",
+  ],
+};
+
+const mockSupabase: SupabaseDataResult = {
+  destination: "Ubud, Bali, Indonesia",
+  weather: [
+    {
+      month: "July",
+      humidity: "high",
+      condition: "sunny",
+      tempCelsius: 29,
+    },
+    {
+      month: "June",
+      humidity: "high",
+      condition: "sunny",
+      tempCelsius: 28,
+    },
+    {
+      month: "August",
+      humidity: "high",
+      condition: "sunny",
+      tempCelsius: 30,
+    },
+  ],
+  popularSpots: [
+    {
+      name: "Tirta Empul Temple",
+      type: "temple",
+      location: {
+        city: "Ubud",
+        name: "Ubud",
+        country: "Indonesia",
+        latitude: -8.6972,
+        longitude: 115.2725,
+      },
+      bestSeason: "all-year",
+    },
+    {
+      name: "Campuhan Ridge Walk",
+      type: "temple",
+      location: {
+        city: "Ubud",
+        name: "Ubud",
+        country: "Indonesia",
+        latitude: -8.6972,
+        longitude: 115.2725,
+      },
+      bestSeason: "all-year",
+    },
+    {
+      name: "Yoga House Ubud",
+      type: "beach",
+      location: {
+        city: "Ubud",
+        name: "Ubud",
+        country: "Indonesia",
+        latitude: -8.6972,
+        longitude: 115.2725,
+      },
+      bestSeason: "all-year",
+    },
+  ],
+  popularFoods: [
+    {
+      name: "Nasi Goreng",
+      priceRange: "$$",
+      description:
+        "Indonesian-style fried rice, often served with a fried egg and vegetables.",
+      bestPlaceToTry: {
+        name: "Warung Ijo",
+        location: {
+          city: "Ubud",
+          name: "Ubud",
+          country: "Indonesia",
+          latitude: -8.6972,
+          longitude: 115.2725,
+        },
+      },
+    },
+    {
+      name: "Gado-Gado",
+      priceRange: "$$",
+      description: "Mixed vegetable salad, often served with tofu and tempeh.",
+      bestPlaceToTry: {
+        name: "Warung Ijo",
+        location: {
+          city: "Ubud",
+          name: "Ubud",
+          country: "Indonesia",
+          latitude: -8.6972,
+          longitude: 115.2725,
+        },
+      },
+    },
+    {
+      name: "Mie Goreng",
+      priceRange: "$$",
+      description:
+        "Stir-fried noodles, often served with vegetables and meat or seafood.",
+      bestPlaceToTry: {
+        name: "Warung Ijo",
+        location: {
+          city: "Ubud",
+          name: "Ubud",
+          country: "Indonesia",
+          latitude: -8.6972,
+          longitude: 115.2725,
+        },
+      },
+    },
+  ],
+  recommendedHotels: [
+    {
+      name: "Four Seasons Resort Bali at Sayan",
+      location: {
+        city: "Ubud",
+        name: "Ubud",
+        country: "Indonesia",
+        latitude: -8.6972,
+        longitude: 115.2725,
+      },
+      amenities: [
+        { amenity: "pool" },
+        { amenity: "spa" },
+        { amenity: "restaurant" },
+      ],
+      starRating: 5,
+      pricePerNightUSD: 1000,
+    },
+    {
+      name: "COMO Uma Ubud",
+      location: {
+        city: "Ubud",
+        name: "Ubud",
+        country: "Indonesia",
+        latitude: -8.6972,
+        longitude: 115.2725,
+      },
+      amenities: [
+        { amenity: "pool" },
+        { amenity: "spa" },
+        { amenity: "restaurant" },
+      ],
+      starRating: 5,
+      pricePerNightUSD: 800,
+    },
+  ],
+  ongoingFestivals: [
+    {
+      name: "Ubud Food Festival",
+      type: "cultural",
+      month: "June",
+      location: {
+        city: "Ubud",
+        name: "Ubud",
+        country: "Indonesia",
+        latitude: -8.6972,
+        longitude: 115.2725,
+      },
+      description:
+        "A celebration of Indonesian cuisine, featuring cooking demonstrations and food stalls.",
+      durationDays: 4,
+    },
+  ],
+  travelTips: [
+    {
+      tip: "Bring sunscreen with high SPF to protect yourself from the sun.",
+    },
+    {
+      tip: "Wear light and breathable clothing suitable for tropical weather.",
+    },
   ],
 };
