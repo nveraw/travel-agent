@@ -46,11 +46,15 @@ describe("planTravel", () => {
     generateDataToolSpy = vi.spyOn(generateDataTool, "invoke");
   });
 
+  const noop = () => {};
   test("should response with itenary", async () => {
     const chunks: string[] = [];
 
-    await planTravel("Trip to Bali", "test-thread", (chunk) =>
-      chunks.push(chunk),
+    await planTravel(
+      "Trip to Bali",
+      "test-thread",
+      (chunk) => chunks.push(chunk),
+      noop,
     );
 
     expect(chunks.join("")).toContain("Itinerary ready");
@@ -65,8 +69,11 @@ describe("planTravel", () => {
     const chunks: string[] = [];
 
     searchTravelToolSpy.mockImplementation(async () => "NO_DATA");
-    await planTravel("Trip to Mars", "test-thread", (chunk) =>
-      chunks.push(chunk),
+    await planTravel(
+      "Trip to Mars",
+      "test-thread",
+      (chunk) => chunks.push(chunk),
+      noop,
     );
 
     expect(chunks.join("")).toContain("Itinerary ready");
@@ -77,7 +84,12 @@ describe("planTravel", () => {
     resolveQuerySpy.mockImplementation(async () => mockResolvedClarifyData);
     const chunks: string[] = [];
 
-    await planTravel("Hello", "test-thread", (chunk) => chunks.push(chunk));
+    await planTravel(
+      "Hello",
+      "test-thread",
+      (chunk) => chunks.push(chunk),
+      noop,
+    );
 
     expect(chunks.join("")).toContain("What kind of trip are you thinking of?");
     expect(searchTravelToolSpy).not.toHaveBeenCalled();
@@ -93,6 +105,7 @@ describe("planTravel", () => {
       "Trip to Bali",
       "thread-abort",
       onChunk,
+      noop,
       controller.signal,
     );
 
@@ -108,7 +121,7 @@ describe("planTravel", () => {
       resolveQuerySpy.mockRejectedValue(new Error("resolveQueryTool error"));
 
       await expect(
-        planTravel("Trip to Bali", "thread-resolved-err", () => {}),
+        planTravel("Trip to Bali", "thread-resolved-err", noop, noop),
       ).rejects.toThrow("resolveQueryTool error");
     });
 
@@ -118,8 +131,11 @@ describe("planTravel", () => {
         new Error("searchTravelTool error"),
       );
 
-      await planTravel("Trip to Mars", "thread-search-err", (chunk) =>
-        chunks.push(chunk),
+      await planTravel(
+        "Trip to Mars",
+        "thread-search-err",
+        (chunk) => chunks.push(chunk),
+        noop,
       );
 
       expect(chunks.join("")).toContain("Itinerary ready");
@@ -131,7 +147,7 @@ describe("planTravel", () => {
       generateDataToolSpy.mockRejectedValue(new Error("generateData error"));
 
       await expect(
-        planTravel("Trip to Bali", "thread-resolved-err", () => {}),
+        planTravel("Trip to Bali", "thread-resolved-err", noop, noop),
       ).rejects.toThrow("generateData error");
     });
   });

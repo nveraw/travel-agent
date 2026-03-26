@@ -20,6 +20,7 @@ export const resolveNode: GraphNode<typeof AgentState> = async (
       parsed.needsMoreInfo && parsed.clarifyingQuestion.length
         ? new AIMessage({
             content: parsed.clarifyingQuestion,
+            additional_kwargs: { clarify: true },
           })
         : new ToolMessage({
             content: JSON.stringify(result),

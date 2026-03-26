@@ -28,7 +28,8 @@ export const planTravel = async (
 
     for await (const [chunk, metadata] of stream as any) {
       if (
-        metadata?.langgraph_node === "itinerary" &&
+        (!!chunk.additional_kwargs.clarify ||
+          metadata?.langgraph_node === "itinerary") &&
         AIMessage.isInstance(chunk)
       ) {
         if (signal?.aborted) break;

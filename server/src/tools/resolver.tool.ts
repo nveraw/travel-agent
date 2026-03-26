@@ -26,6 +26,7 @@ const updateUserPrefs = async (
   result: ResolverResult,
 ) => {
   const { store, thread_id } = config?.configurable || {};
+  if (!store || !thread_id) return;
   const userPrefs = await store.get(["users", thread_id], "travel_prefs");
   const newUserPrefs = {
     ...(userPrefs?.value ?? {}),
