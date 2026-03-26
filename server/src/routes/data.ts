@@ -91,7 +91,7 @@ router.get("/data", async (req: Request, res: Response) => {
     )
   `,
       )
-      .ilike("name", destination.toString())
+      .ilike("name", `%${destination.toString()}%`)
       .single();
     console.log("selecting data", data);
 
@@ -162,92 +162,20 @@ const insertSelect = async (
 
 router.post("/data", async (req: Request, res: Response) => {
   try {
-    const { data }: { data: TravelDataResult } = req.body;
-    console.log("saveData...", data);
+    const payload: TravelDataResult = req.body; // not { result: ... }
 
-    const destinationId = await insertSelect("destinations", {
-      name: data.destination,
-    });
+    const { error } = await supabase.from("queue").insert({ payload });
 
-    for (const spot of data.popularSpots) {
-      const locationId = await insertSelect("locations", spot.location);
-      supabase.from("spots").insert({
-        destination_id: destinationId,
-        name: spot.name,
-        location_id: locationId,
-        type: spot.type,
-        best_season: spot.bestSeason,
-      });
+    if (error) {
+      console.error("enqueue failed:", error.message);
+      res.status(500).json({ error: "Failed to enqueue destination" });
+      return;
     }
 
-    for (const food of data.popularFoods) {
-      const locationId = await insertSelect(
-        "locations",
-        food.bestPlaceToTry.location,
-      );
-      const restaurantId = await insertSelect("restaurants", {
-        name: food.bestPlaceToTry.name,
-        location_id: locationId,
-      });
-      supabase.from("foods").insert({
-        destination_id: destinationId,
-        name: food.name,
-        description: food.description,
-        price_range: food.priceRange,
-        restaurant_id: restaurantId,
-      });
-    }
-
-    for (const hotel of data.recommendedHotels) {
-      const locationId = await insertSelect("locations", hotel.location);
-      const hotelId = await insertSelect("hotels", {
-        destination_id: destinationId,
-        name: hotel.name,
-        star_rating: hotel.starRating,
-        location_id: locationId,
-        price_per_night_usd: hotel.pricePerNightUSD,
-      });
-      for (const amenity of hotel.amenities) {
-        supabase.from("hotel_amanities").insert({
-          hotel_id: hotelId,
-          amenity,
-        });
-      }
-    }
-
-    for (const festival of data.ongoingFestivals) {
-      const locationId = await insertSelect("locations", festival.location);
-      supabase.from("festivals").insert({
-        destination_id: destinationId,
-        name: festival.name,
-        location_id: locationId,
-        month: festival.month,
-        duration_day: festival.durationDays,
-        description: festival.description,
-        type: festival.type,
-      });
-    }
-
-    for (const [month, weather] of Object.entries(data.weatherByMonth)) {
-      supabase.from("weather").insert({
-        destination_id: destinationId,
-        month,
-        condition: weather.condition,
-        temp_celcius: weather.tempCelsius,
-        humidity: weather.humidity,
-      });
-    }
-
-    for (const tip of data.travelTips) {
-      supabase.from("travel_tips").insert({
-        destination_id: destinationId,
-        tip,
-      });
-    }
-    res.status(201).json({ ok: true });
+    res.status(202).json({ ok: true, queued: true });
   } catch (err) {
-    console.error("POST /data error:", err);
-    res.status(500).json({ error: "Failed to save destination data" });
+    console.error(err);
+    res.status(500).json({ error: "Failed to queue job" });
   }
 });
 

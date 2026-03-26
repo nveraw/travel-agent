@@ -68,8 +68,9 @@ export const generateDataTool = tool(
     fetch("http://localhost:3001/internal/data", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ data: result }),
-    });
+      body: JSON.stringify(result),
+    }).catch((err) => console.error("enqueue fetch failed:", err));
+
     return JSON.stringify(result);
   },
   {

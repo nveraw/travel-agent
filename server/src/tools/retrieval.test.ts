@@ -30,7 +30,9 @@ describe("searchTravelTool API call", () => {
 
     global.fetch = mockFetch;
 
-    const result = await searchTravelTool.invoke(mockResolvedData);
+    const result = await searchTravelTool.invoke(
+      mockResolvedData.candidates[0].city,
+    );
 
     expect(mockFetch).toHaveBeenCalledWith(
       "http://localhost:3001/internal/data?destination=Bali",
@@ -102,7 +104,7 @@ describe("generateDataTool AI call", () => {
       expect.objectContaining({
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: result,
+        body: JSON.stringify(obj),
       }),
     );
   });
