@@ -2,6 +2,8 @@
 
 An AI-powered travel itinerary generator built with React, Express, and Mistral AI. Uses a LangGraph multi-step chain to resolve destinations, fetch or generate (fun project, accuracy of the data is not a concern here) travel data, and stream personalized itineraries.
 
+[25.03.2026 19_03.webm](https://github.com/user-attachments/assets/d84274d4-e69d-4f30-88ae-8383709a7389)
+
 ---
 
 ## Project Structure
